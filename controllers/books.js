@@ -5,6 +5,7 @@ const Books = require('../models/Books.js');
 
 const router = express.Router();
 
+// Get all books
 const getBooks = async (req, res) => {
     try {
         const books = await Books.find();
@@ -12,23 +13,38 @@ const getBooks = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
-}
+};
 
+// Get a single book
 const getBook = async (req, res) => {
-    const id = req.params;
+    const id = req.params.id;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).send(`Invalid ObjectId: ${id}`);
+    }
 
     try {
-        const book = await Books.find(id);
+        const book = await Books.findOne({ _id: id });
+
+        if (!book) {
+            return res.status(404).send(`No book found with id: ${id}`);
+        }
+
         res.status(200).json(book);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
-}
+};
 
+// Create a new book
 const createBook = async (req, res) => {
-    const { title, image, author, summary, categories } = req.body;
+    const { title, image, author, amount, summary, categories } = req.body;
 
-    const newBook = new Books({ title, image, author, summary, categories });
+    if (!title || !image || !author || !amount || !summary || !categories) {
+        return res.status(400).send('Missing required fields');
+    }
+
+    const newBook = new Books({ title, image, author, amount, summary, categories });
 
     try {
         await newBook.save();
@@ -36,34 +52,53 @@ const createBook = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
-}
+};
 
+// Update a book
 const updateBook = async (req, res) => {
     const { id } = req.params;
-    const { title, image, author, summary, categories } = req.body;
+    const { title, image, author, amount, summary, categories } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-        return res.status(500).send(`There are no books with the id: ${id}`);
+        return res.status(400).send(`Invalid ObjectId: ${id}`);
     }
 
-    const updatedBook = { title, image, author, summary, categories, _id: id };
+    const updatedBook = { title, image, author, amount, summary, categories, _id: id };
 
-    await Books.findByIdAndUpdate(id, updatedBook, { new: true });
-    
-    res.json(updatedBook);
-}
+    try {
+        const existingBook = await Books.findOne({ _id: id });
 
+        if (!existingBook) {
+            return res.status(404).send(`No book found with id: ${id}`);
+        }
+        await Books.findByIdAndUpdate(id, updatedBook, { new: true });
+        res.json(updatedBook);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Delete a book
 const deleteBook = async (req, res) => {
     const { id } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-        return res.status(500).send(`There are no books with the id: ${id}`);
+        return res.status(400).send(`Invalid ObjectId: ${id}`);
     }
 
-    await Books.findByIdAndDelete(id);
+    try {
+        const existingBook = await Books.findOne({ _id: id });
 
-    res.json({ message: 'Book deleted!' });
-}
+        if (!existingBook) {
+            return res.status(404).send(`No book found with id: ${id}`);
+        }
+
+        await Books.findByIdAndDelete(id);
+        res.json({ message: 'Book deleted!' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
 
 module.exports = {
     router,

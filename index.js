@@ -4,6 +4,8 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 
 const bookRoutes = require('./routes/books');
+const userRoutes = require('./routes/users');
+const cartRoutes = require('./routes/cart');
 
 const app = express();
 
@@ -12,6 +14,8 @@ app.use(bodyParser.urlencoded({ limit: "30mb", extended: true }));
 app.use(cors());
 
 app.use('/books', bookRoutes);
+app.use('/users', userRoutes);
+app.use('/cart', cartRoutes);
 
 const CONNECTION_URL = 'mongodb+srv://Book_Vault:bookvault@node-basics.kc9afxh.mongodb.net/';
 const PORT = process.env.PORT || 5000;
